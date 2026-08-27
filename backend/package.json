@@ -1,7 +1,7 @@
 {
   "name": "zhixue-ai-backend",
   "version": "1.0.0",
-  "description": "智学AI后端",
+  "description": "知行愈后端",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

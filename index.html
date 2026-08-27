@@ -188,26 +188,135 @@ function saveEvent(){var type=document.getElementById('addType').value.trim(),du
 (function(){var observer=new MutationObserver(function(){var target=document.getElementById('page-sport-plan');if(target&&target.classList.contains('active')){autoShowEvents();}});observer.observe(document.getElementById('page-sport-plan'),{attributes:true,attributeFilter:['class']});})();
 function autoShowEvents(){var undone=schedule.filter(function(s){return !s.done;});if(undone.length===0)return;var idx=0;function showNext(){if(idx>=undone.length)return;var realIdx=schedule.indexOf(undone[idx]);openEvent(realIdx);idx++;setTimeout(showNext,1400);}setTimeout(showNext,600);}
 renderSchedule();updateStats();
-function getDietAdvice(){
-    var input=document.getElementById('dietInput').value.trim();
-    if(!input){alert('请输入需求');return;}
-    var result=document.getElementById('dietResult');
-    result.innerHTML='🥗 AI正在生成饮食建议...';
-    var token=localStorage.getItem('token');
-    if(!token){result.innerHTML='请先登录';return;}
-    fetch(API_BASE+'/solve/chat',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-        body:JSON.stringify({question:'请以专业营养师的身份，直接推荐一日三餐，包括早中晚三顿饭的具体食物搭配和热量估算。不要出现"详细步骤""答案""知识点"这些格式，直接给出饮食建议。需求：'+input})
-    })
-    .then(function(r){return r.json();})
-    .then(function(d){
-        if(d.success) result.innerHTML=d.answer.replace(/\n/g,'<br>');
-        else result.innerHTML='❌ '+(d.message||'获取失败');
-    })
-    .catch(function(){ result.innerHTML='❌ 网络错误'; });
-}
+function renderDietResult(raw) {
+    var lines = raw.split('\n').filter(function(l) { return l.trim(); });
+    var html = '';
 
+    html += '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:32px 28px;line-height:1.9;">';
+
+    // 顶部
+    html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.06);">';
+    html += '<div style="width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,rgba(0,200,83,0.2),rgba(105,240,174,0.08));display:flex;align-items:center;justify-content:center;font-size:26px;">🥗</div>';
+    html += '<div>';
+    html += '<div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:1px;">专属饮食方案</div>';
+    html += '<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px;letter-spacing:2px;">PERSONALIZED NUTRITION PLAN</div>';
+    html += '</div></div>';
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+
+        // 餐次标题
+        if (/^(早餐|午餐|晚餐|加餐)/.test(line)) {
+            var titleText = line.replace(/\*\*/g,'');
+            var icon = /早餐/.test(titleText) ? '🌅' : /午餐/.test(titleText) ? '☀️' : /晚餐/.test(titleText) ? '🌙' : '🍎';
+            html += '<div style="margin-top:26px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">';
+            html += '<span style="font-size:20px;">' + icon + '</span>';
+            html += '<span style="font-size:17px;font-weight:700;color:#ffffff;letter-spacing:1px;">' + titleText + '</span>';
+            html += '<div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent);"></div>';
+            html += '</div>';
+        }
+
+        // 食物行
+        else if (/^食物[：:]/.test(line)) {
+            var content = line.replace(/^食物[：:]\s*/, '').replace(/\*\*/g,'');
+            var parts = content.split('+');
+            html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px;">';
+            for (var p = 0; p < parts.length; p++) {
+                var food = parts[p].trim();
+                if (!food) continue;
+                html += '<span style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.15);padding:7px 14px;border-radius:10px;font-size:13px;color:rgba(255,255,255,0.8);">' + food + '</span>';
+            }
+            html += '</div>';
+        }
+
+        // 搭配逻辑
+        else if (/^搭配逻辑/.test(line)) {
+            html += '<div style="margin-top:8px;padding:12px 16px;background:rgba(0,200,83,0.04);border-left:3px solid #00c853;border-radius:10px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7;">';
+            html += line.replace(/\*\*/g,'').replace(/^搭配逻辑[：:]\s*/, '💡 ');
+            html += '</div>';
+        }
+
+        // 关键执行要点标题
+        else if (/^(关键执行要点|关键|执行要点)/.test(line)) {
+            html += '<div style="margin-top:30px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">';
+            html += '<div style="width:4px;height:20px;background:linear-gradient(180deg,#ffab00,#ff8f00);border-radius:4px;flex-shrink:0;"></div>';
+            html += '<div style="font-size:16px;font-weight:700;color:#ffffff;letter-spacing:2px;">' + line.replace(/\*\*/g,'').replace(/[：:]/g,'') + '</div>';
+            html += '</div>';
+        }
+
+        // 编号条目
+        else if (/^\d+[.、]/.test(line)) {
+            var numMatch = line.match(/^(\d+)[.、]/);
+            var num = numMatch ? numMatch[1] : '';
+            var rest = line.replace(/^\d+[.、]\s*/, '').replace(/\*\*/g,'');
+            html += '<div style="display:flex;gap:12px;padding:8px 4px;margin:2px 0;">';
+            html += '<div style="width:24px;height:24px;border-radius:8px;background:rgba(255,171,0,0.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#ffab00;flex-shrink:0;">' + num + '</div>';
+            html += '<div style="flex:1;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;">' + rest + '</div>';
+            html += '</div>';
+        }
+
+        // 热量标签
+        else if (/^\d+\s*千卡/.test(line)) {
+            var calVal = line.match(/\d+/);
+            if (calVal) {
+                html += '<div style="display:inline-block;margin:4px 0;padding:4px 14px;background:rgba(0,230,118,0.1);border-radius:20px;font-size:12px;font-weight:700;color:#69f0ae;letter-spacing:1px;">' + calVal[0] + ' 千卡</div>';
+            }
+        }
+
+        // 结尾说明
+        else if (/^这份|^如果|^坚持/.test(line)) {
+            html += '<div style="margin-top:14px;padding:14px 16px;background:rgba(0,230,118,0.04);border:1px solid rgba(0,230,118,0.1);border-radius:12px;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.8;">';
+            html += line.replace(/\*\*/g,'');
+            html += '</div>';
+        }
+
+        // 普通文字
+        else {
+            html += '<div style="color:rgba(255,255,255,0.5);padding:3px 4px;font-size:13px;">' + line.replace(/\*\*/g,'') + '</div>';
+        }
+    }
+
+    html += '</div>';
+    return html;
+}
+function getDietAdvice() {
+    var input = document.getElementById('dietInput').value.trim();
+    if (!input) {
+        alert('请输入需求');
+        return;
+    }
+
+    var result = document.getElementById('dietResult');
+    result.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.4);font-size:14px;">🥗 正在为你定制专属营养方案...</div>';
+
+    var token = localStorage.getItem('token');
+    if (!token) {
+        result.innerHTML = '<div style="text-align:center;padding:30px;color:#ff5252;">请先登录</div>';
+        return;
+    }
+
+    fetch(API_BASE + '/solve/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+            question: '请以专业营养师的身份，直接推荐一日三餐。要求：每餐用"早餐""午餐""晚餐"作为标题，每餐列出"食物：xxx + xxx + xxx"，再给出"搭配逻辑：xxx"。最后给出"关键执行要点："并用编号列出。不要输出"详细步骤""答案""知识点"这些格式。需求：' + input
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) {
+            result.innerHTML = renderDietResult(d.answer);
+        } else {
+            result.innerHTML = '<div style="text-align:center;padding:30px;color:#ff5252;">❌ ' + (d.message || '获取失败') + '</div>';
+        }
+    })
+    .catch(function() {
+        result.innerHTML = '<div style="text-align:center;padding:30px;color:#ff5252;">❌ 网络错误</div>';
+    });
+}
 function foodTable(){return '<br><br><div style="font-weight:700;color:#fff;">🔥 食物热量速查 (每100g)</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;">'+['🍚 米饭 116kcal','🍗 鸡胸肉 133kcal','🥚 鸡蛋 144kcal','🥦 西兰花 34kcal','🍎 苹果 52kcal','🥑 牛油果 160kcal','🍞 全麦面包 247kcal','🥛 牛奶 42kcal'].map(function(f){return '<div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:8px;font-size:11px;text-align:center;color:rgba(255,255,255,0.6);">'+f+'</div>';}).join('')+'</div>';}
 function defaultDiet(){return '<strong style="color:#00e676;">🥗 示例一日食谱</strong><br><br>🌅 燕麦50g+牛奶250ml+蛋2个<br>🌞 糙米饭150g+鸡胸肉150g+西兰花<br>🌙 红薯200g+清蒸鱼150g<br>📊 约1500kcal</strong>'+foodTable();}
 (function(){document.getElementById('dietResult').innerHTML=defaultDiet();})();

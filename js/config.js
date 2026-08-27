@@ -1,1 +1,1 @@
-var API_BASE = 'https://zhixue-ai-production-6164.up.railway.app/api';
+var API_BASE = 'http://localhost:3000/api';
