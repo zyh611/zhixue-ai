@@ -1,0 +1,17 @@
+{
+  "engines": {
+    "node": ">=18"
+  },
+  "name": "aipro-mtdia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "知行愈——AI 赋能的学生成长全维关怀系统",
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "server": "node backend/server.js",
+    "install:backend": "npm --prefix backend install"
+  }
+}
