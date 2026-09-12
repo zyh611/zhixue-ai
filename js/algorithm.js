@@ -242,7 +242,39 @@
         localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list.slice(-30)));
     }
 
+    function hasActualUserData() {
+        var solveHistory = getJSON('solve_history', []);
+        var wrongQuestions = getJSON('wrong_questions', []);
+        var sportSchedule = getJSON('sport_schedule', []);
+        var relaxCount = getNumber('relax_count', 0);
+        var hasPsychScore = localStorage.getItem('psych_chat_score') !== null;
+        return solveHistory.length > 0 || wrongQuestions.length > 0 || sportSchedule.length > 0 || relaxCount > 0 || hasPsychScore;
+    }
+
     function calculate() {
+        // 首次使用且没有任何实际行为数据时，仅显示 0；有数据后完全沿用原 M-TDIA 计算公式。
+        if (!hasActualUserData()) {
+            return {
+                version: VERSION,
+                learn: 0,
+                sport: 0,
+                psych: 0,
+                raw: { learn: 0, sport: 0, psych: 0 },
+                states: {
+                    learn: { score: 0, trend: 0, stability: 0, persistence: 0, series: [] },
+                    sport: { score: 0, trend: 0, stability: 0, persistence: 0, series: [] },
+                    psych: { score: 0, trend: 0, stability: 0, persistence: 0, series: [] }
+                },
+                risks: { learn: 0, sport: 0, psych: 0 },
+                weights: { learn: 1/3, sport: 1/3, psych: 1/3 },
+                prediction: { learn: 0, sport: 0, psych: 0 },
+                index: 0,
+                intervention: { advice: ['开始记录：完成一次学习、运动或心理活动后，系统将开始动态评估。'] },
+                historyDays: getDailyHistory().length,
+                feedbackCount: getFeedbackHistory().length
+            };
+        }
+
         var raw = { learn: calcLearnScore(), sport: calcSportScore(), psych: calcPsychScore() };
         var daily = ensureTodaySnapshot(raw);
 
