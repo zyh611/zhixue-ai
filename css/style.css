@@ -136,8 +136,10 @@ body{font-family:'Segoe UI','PingFang SC',Roboto,sans-serif;background:#d0e8f8;h
 /* 解题页 */
 #solveInput{background:rgba(255,255,255,0.04)!important;border:2px solid rgba(162,155,254,0.2)!important;color:#fff!important;flex:1;padding:16px 20px;border-radius:16px;font-size:15px;outline:none;transition:0.3s}
 #solveInput:focus{border-color:#a29bfe!important;box-shadow:0 0 35px rgba(108,92,231,0.25)!important}
-#solveResult{background:rgba(255,255,255,0.03)!important;color:rgba(255,255,255,0.7)!important;margin-top:16px;padding:24px;border-radius:16px;min-height:200px;line-height:2;border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px)}
-#ocrResult{background:rgba(255,255,255,0.03)!important;color:rgba(255,255,255,0.7)!important;padding:18px;border-radius:16px;min-height:200px;line-height:1.8;border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px)}
+#solveResult{background:rgba(255,255,255,0.03)!important;color:rgba(255,255,255,0.7)!important;margin-top:16px;padding:24px;border-radius:16px;min-height:200px;line-height:1.65;border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px)}
+#ocrResult{background:rgba(255,255,255,0.03)!important;color:rgba(255,255,255,0.7)!important;padding:18px;border-radius:16px;min-height:200px;line-height:1.55;border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px)}
+#solveResult mjx-container[display="true"],#ocrResult mjx-container[display="true"]{margin:.3em 0!important}
+#solveResult mjx-container,#ocrResult mjx-container{line-height:1.15}
 #uploadBox{flex:1;min-width:280px;min-height:320px;border:3px solid #1a3a6e!important;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:rgba(108,92,231,0.03);transition:0.4s;position:relative;overflow:hidden}
 #uploadBox::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(transparent,rgba(108,92,231,0.06),transparent,rgba(0,200,255,0.04),transparent);animation:rotate 10s linear infinite;z-index:0}
 #uploadBox>*{position:relative;z-index:1}

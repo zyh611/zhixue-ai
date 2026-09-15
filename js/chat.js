@@ -32,10 +32,39 @@ function clearImage() {
 }
 
 function formatAnswer(rawAnswer) {
-    return rawAnswer.replace(/\\\\/g,'\\').replace(/\\\(/g,'\\(').replace(/\\\)/g,'\\)').replace(/\\\[/g,'\\[').replace(/\\\]/g,'\\]').replace(/\n/g,'<br>');
+    var source = String(rawAnswer || '');
+
+    // Some model responses contain an extra level of escaping (for example \\frac).
+    // Unescape only LaTeX commands/delimiters so a genuine LaTeX line break (\\\\)
+    // is not accidentally changed.
+    source = source.replace(/\\\\(?=[a-zA-Z]|\[|\]|\(|\))/g, '\\');
+    // OCR/JSON output may leave a serialization slash directly before a line
+    // break after a math delimiter ("\\[\\n"). It is not part of the formula.
+    source = source.replace(/(\\\[|\\\]|\\\(|\\\))\\\r?\n/g, '$1\n');
+    // Also accept literal "\\n" sequences occasionally returned by OCR/LLM
+    // serialization, while leaving LaTeX commands such as \\newcommand intact.
+    source = source.replace(/\\n(?![a-zA-Z])/g, '\n');
+
+    var parts = source.split(/(\\\[|\\\]|\\\(|\\\))/g);
+    var inMath = false;
+    return parts.map(function(part) {
+        if (!part) return '';
+        if (part === '\\[' || part === '\\]' || part === '\\(' || part === '\\)') {
+            inMath = part === '\\[' || part === '\\(';
+            return part;
+        }
+        // Never insert <br> inside a MathJax expression. HTML-escape both areas
+        // because the result is assigned to innerHTML below.
+        var escaped = part.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return inMath ? escaped : escaped.replace(/\r?\n/g, '<br>');
+    }).join('');
 }
 
-function renderMath(element) { if(window.MathJax){ MathJax.typesetPromise([element]); } }
+function renderMath(element) {
+    if (!window.MathJax || !element) return;
+    if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear([element]);
+    MathJax.typesetPromise([element]).catch(function() {});
+}
 
 function saveSolveRecord(question, answer, duration) {
     var history = JSON.parse(localStorage.getItem("solve_history") || "[]");
@@ -257,4 +286,3 @@ function deleteHistory(index) {
     localStorage.setItem("solve_history", JSON.stringify(history));
     updateAllStats();
 }
-
