@@ -143,16 +143,15 @@ function solveImage() {
     var startTime = Date.now();
     var formData = new FormData();
     formData.append('image', file);
-    fetch(API_BASE + '/solve/image', {
+    apiRequest('/solve/image', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token },
         body: formData
     })
-    .then(function(res){ return res.json(); })
     .then(function(data){
         if (data.ocrText) {
             resultDiv.innerHTML = '🧠 AI 正在解题中...';
-            return fetch(API_BASE + '/solve', {
+            return apiRequest('/solve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ question: data.ocrText })
@@ -162,7 +161,6 @@ function solveImage() {
             throw new Error('OCR失败');
         }
     })
-    .then(function(res){ return res.json(); })
     .then(function(data){
         if (data.success) {
             var duration = Math.round((Date.now() - startTime) / 1000);
@@ -222,12 +220,11 @@ function sendSolve() {
     if(!token){ alert('请先登录'); return; }
     var startTime = Date.now();
     resultDiv.innerHTML = '🧠 AI 正在思考中...';
-    fetch(API_BASE + '/solve', {
+    apiRequest('/solve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ question: text })
     })
-    .then(function(res){ return res.json(); })
     .then(function(data){
         var duration = Math.round((Date.now() - startTime) / 1000);
            if(data.success){
@@ -254,12 +251,11 @@ function sendMessage(inputId, messagesId) {
     var token = localStorage.getItem('token');
     if(!token) return;
     var startTime = Date.now();
-    fetch(API_BASE + '/solve', {
+    apiRequest('/solve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ question: text })
     })
-    .then(function(res){ return res.json(); })
     .then(function(data){
         var duration = Math.round((Date.now() - startTime) / 1000);
         var botMsg = document.createElement('div');

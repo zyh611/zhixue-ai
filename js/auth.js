@@ -7,12 +7,11 @@ function doLogin() {
         return;
     }
 
-    fetch(API_BASE + '/auth/login', {
+    apiRequest('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username, password: password })
     })
-    .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.success) {
             localStorage.setItem('token', data.token);
@@ -60,10 +59,9 @@ function updateStats(user) {
         var token = localStorage.getItem('token');
 
         if (token) {
-            fetch(API_BASE + '/auth/profile', {
+            apiRequest('/auth/profile', {
                 headers: { 'Authorization': 'Bearer ' + token }
             })
-            .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data.success) {
                     document.getElementById('loginPage').classList.add('hidden');
